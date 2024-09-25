@@ -27,10 +27,6 @@ class Client
         $curl = curl_init();
         $url = $this->apiTokenManager->getApiUrl() . $endpoint;
 
-        if ($method === 'GET' && !empty($data)) {
-            $url .= '?' . http_build_query($data);
-        }
-
         $headers = ['Accept: application/vnd.api+json'];
         if ($includeAuth) {
             $headers[] = 'Authorization: Bearer ' . $this->apiTokenManager->getAccessToken();
@@ -47,7 +43,10 @@ class Client
             CURLOPT_HTTPHEADER => $headers,
         ];
 
-        if ($method === 'POST' && !empty($data)) {
+        
+        if ($method === 'GET' && !empty($data)) {
+            $options[CURLOPT_URL] .= '?' . http_build_query($data);
+        } elseif ($method === 'POST' && !empty($data)) {
             $options[CURLOPT_POSTFIELDS] = json_encode($data);
             $headers[] = 'Content-Type: application/json';
         }

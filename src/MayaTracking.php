@@ -8,14 +8,14 @@ class MayaTracking
     private $client;
     private $orderTrackingHandler;
     private $shipmentInfoRetriever;
-    private $logger;
+    private $logger = null;
 
     private function __construct()
     {
         $this->apiTokenManager = ApiTokenManager::getInstance();
         $this->client = new Client($this->apiTokenManager);
-        $this->shipmentInfoRetriever = new ShipmentInfoRetriever($this->client);
-        $this->orderTrackingHandler = new OrderTrackingHandler($this->client);
+        $this->shipmentInfoRetriever = new ShipmentInfoRetriever($this->client, Logger::getInstance());
+        $this->orderTrackingHandler = new OrderTrackingHandler($this->client, Logger::getInstance());
         $this->logger = new Logger();
     }
 
@@ -26,7 +26,7 @@ class MayaTracking
         }
         return self::$instance;
     }
-    public function generateMayaTrackingUrl($external_order_number)
+    public function generateMayaTrackingUrl(string $external_order_number)
     {
         try {
             $order_info = $this->orderTrackingHandler->generateActiveAntsOrderInfo($external_order_number);
@@ -34,11 +34,15 @@ class MayaTracking
                 $this->logger->error("Order not found for external order number: " . $external_order_number);
                 return null;
             }
+
             $order_id = $order_info['data'][0]['id'];
+            echo $order_id;
 
             $shipment_info = $this->shipmentInfoRetriever->getActiveAntsShipmentInfo($order_id);
             if (!$shipment_info) {
-                $this->logger->error("Shipment info not found for order ID: " . $order_id);
+                $this->logger->error("Shipment info not found for order ID: " . $order_id, [
+                    'order_id' => $order_id
+                ]);
                 return null;
             }
 
@@ -59,12 +63,11 @@ class MayaTracking
             return null;
         }
     }
-    public function getOrGenerateMayaTrackingUrl($order_id)
+    public function getOrGenerateMayaTrackingUrl(string $order_id)
     {
         $tracking_url = get_post_meta($order_id, MAYA_TRACKING_URL_META_KEY, true);
         if (!$tracking_url) {
-            $external_order_number = get_post_meta($order_id, 'external_order_number', true);
-            $tracking_url = $this->generateMayaTrackingUrl($external_order_number);
+            $tracking_url = $this->generateMayaTrackingUrl($order_id);
             if ($tracking_url) {
                 update_post_meta($order_id, MAYA_TRACKING_URL_META_KEY, $tracking_url);
             }
