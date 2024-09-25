@@ -19,6 +19,7 @@ class ApiTokenManager {
             error_log('Maya API credentials are not properly configured in wp-config.php');
         }
     }
+    
     public function getApiUrl() {
         return $this->api_url;
     }
@@ -32,6 +33,8 @@ class ApiTokenManager {
 
     public function getAccessToken() {
         if ($this->access_token === null || $this->isTokenExpired()) {
+            $this->access_token = null;
+            $this->token_expiry = null;
             $this->generateNewToken();
         }
         return $this->access_token;
