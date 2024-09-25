@@ -31,7 +31,6 @@ class MayaTracking
         try {
             $order_info = $this->orderTrackingHandler->generateActiveAntsOrderInfo($external_order_number);
             if (!isset($order_info['data'][0]['id'])) {
-                // error_log("Order not found for external order number: " . $external_order_number);
                 $this->logger->error("Order not found for external order number: " . $external_order_number);
                 return null;
             }

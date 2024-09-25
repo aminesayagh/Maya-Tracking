@@ -10,13 +10,20 @@ class Logger
 
     private $logFile;
     private $logLevel;
+    private static $instance = null;
 
     public function __construct($logFile = null, $logLevel = self::INFO)
     {
         $this->logFile = $logFile ?: ABSPATH . 'wp-content/uploads/maya-tracking.log';
         $this->logLevel = $logLevel;
     }
-
+    static public function getInstance()
+    {
+        if (self::$instance == null) {
+            self::$instance = new Logger();
+        }
+        return self::$instance;
+    }
     public function log($message, $level = self::INFO, $context = [])
     {
         if ($this->shouldLog($level)) {

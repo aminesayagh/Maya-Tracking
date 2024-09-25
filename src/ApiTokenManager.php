@@ -9,15 +9,19 @@ class ApiTokenManager {
     private $api_url;
     private $username;
     private $password;
+    private $logger;
 
-    private function __construct() {
+    private function __construct(Logger $logger) {
         $this->api_url = defined('MAYA_API_URL') ? MAYA_API_URL : '';
         $this->username = defined('MAYA_API_USERNAME') ? MAYA_API_USERNAME : '';
         $this->password = defined('MAYA_API_PASSWORD') ? MAYA_API_PASSWORD : '';
         
         if (empty($this->api_url) || empty($this->username) || empty($this->password)) {
-            error_log('Maya API credentials are not properly configured in wp-config.php');
+            $logger->error("API URL, username, or password not set");
+            return;
         }
+
+        $this->logger = $logger;
     }
     
     public function getApiUrl() {
@@ -26,7 +30,7 @@ class ApiTokenManager {
 
     public static function getInstance() {
         if (self::$instance == null) {
-            self::$instance = new ApiTokenManager();
+            self::$instance = new ApiTokenManager(Logger::getInstance());
         }
         return self::$instance;
     }
@@ -72,7 +76,7 @@ class ApiTokenManager {
         curl_close($curl);
 
         if ($err) {
-            error_log("cURL Error #:" . $err);
+            $this->logger->error("Curl error while generating access token: " . $err);
             return false;
         } else {
             $result = json_decode($response, true);
@@ -81,7 +85,7 @@ class ApiTokenManager {
                 $this->token_expiry = time() + $result['expires_in'];
                 return true;
             } else {
-                error_log("Authentication failed: " . ($result['error_description'] ?? 'Unknown error'));
+                $this->logger->error("Authentication failed: " . ($result['error_description'] ?? 'Unknown error'));
                 return false;
             }
         }
